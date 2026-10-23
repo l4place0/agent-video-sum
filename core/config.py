@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -8,12 +9,31 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 def user_config_file() -> Path:
     """Return the user-level dotenv file loaded before the project file."""
-    return user_config_path("video-sum") / "config.env"
+    canonical = user_config_path("video-sum") / "config.env"
+    if canonical.is_file():
+        return canonical
+    if os.name == "nt":
+        legacy = canonical.parent.parent / "config.env"
+        if legacy.is_file():
+            return legacy
+    return canonical
 
 
 def project_config_file(project_dir: Path | None = None) -> Path:
     """Return the project-level dotenv file."""
     return (project_dir or Path.cwd()) / ".env"
+
+
+def default_model_dir() -> Path:
+    canonical = user_data_path("video-sum") / "models"
+    if os.name == "nt":
+        legacy = canonical.parent.parent / "models"
+        names = ("ggml-base-q5_1.bin", "ggml-small-q5_1.bin", "ggml-medium-q5_0.bin")
+        if any((legacy / name).is_file() for name in names) and not any(
+            (canonical / name).is_file() for name in names
+        ):
+            return legacy
+    return canonical
 
 
 class Settings(BaseSettings):
@@ -27,12 +47,12 @@ class Settings(BaseSettings):
     asr_model: str = "whisper-1"     # cloud model name
     asr_timeout_seconds: int = 3600
     asr_model_dir: Path = Field(
-        default_factory=lambda: user_data_path("video-sum") / "models",
+        default_factory=default_model_dir,
         validation_alias=AliasChoices("VIDEO_SUM_MODEL_DIR", "ASR_MODEL_DIR"),
     )
     whisper_cpp_executable: str = "whisper-cli"
     whisper_cpp_model: Path = (
-        user_data_path("video-sum") / "models" / "ggml-small-q5_1.bin"
+        default_model_dir() / "ggml-small-q5_1.bin"
     )
 
     # Cookies (for Bilibili etc.)

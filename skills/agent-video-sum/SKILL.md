@@ -412,7 +412,7 @@ On success, verify the returned paths exist. Inspect the note and confirm it
 contains these level-one headings in order:
 
 ```markdown
-# 总结稿
+# 总结
 # 辅助理解
 # Data
 ```

@@ -439,7 +439,7 @@ class FilesystemLibrary:
             f"tags: {json.dumps(tags, ensure_ascii=False)}",
             "---",
             "",
-            "# 总结稿",
+            "# 总结",
             "",
             summary.strip() or "暂无总结。",
             "",

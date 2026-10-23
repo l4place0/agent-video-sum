@@ -81,10 +81,10 @@ def test_ingestion_exports_required_note_sections(tmp_path):
 
     assert result.note_path.exists()
     note = result.note_path.read_text(encoding="utf-8")
-    assert "\n# 总结稿\n" in note
+    assert "\n# 总结\n" in note
     assert "\n# 辅助理解\n" in note
     assert "\n# Data\n" in note
-    assert note.index("# 总结稿") < note.index("# 辅助理解") < note.index("# Data")
+    assert note.index("# 总结") < note.index("# 辅助理解") < note.index("# Data")
     assert "暂无总结。" in note
     assert "[00:00] 第一段" in note
     assert len(result.frame_paths) == 2
@@ -174,6 +174,40 @@ def test_ingestion_reuses_content_addressed_cache(tmp_path):
     )
     assert manifest["cache_keys"]["transcript"]
     assert first.resource_id == second.resource_id
+
+
+def test_bilibili_parts_have_separate_resources_and_cache(tmp_path):
+    class BilibiliPlatform:
+        def resolve_capture(self, url):
+            part = url.rsplit("p=", 1)[1]
+            return url, f"BV123-p{part}"
+
+        def download(self, url, output_dir, keep_video=False):
+            part = url.rsplit("p=", 1)[1]
+            audio = output_dir / f"{part}.wav"
+            audio.write_bytes(part.encode())
+            return audio, {"title": f"Course P{part}", "duration": 100}, None
+
+    platform = BilibiliPlatform()
+    service = IngestionService(
+        asr_factory=_fake_asr,
+        platform_resolver=lambda _url: platform,
+        frame_extractor=_fake_frames,
+    )
+    with patch.object(settings, "cache_root", tmp_path / "cache"):
+        first = service.ingest(IngestionRequest(
+            source="https://www.bilibili.com/video/BV123/?p=1",
+            output_dir=tmp_path / "notes", frame_count=0, cache_policy="reuse",
+        ))
+        second = service.ingest(IngestionRequest(
+            source="https://www.bilibili.com/video/BV123/?p=2",
+            output_dir=tmp_path / "notes", frame_count=0, cache_policy="reuse",
+        ))
+    first_manifest = json.loads(first.manifest_path.read_text(encoding="utf-8"))
+    second_manifest = json.loads(second.manifest_path.read_text(encoding="utf-8"))
+    assert first.resource_id != second.resource_id
+    assert first.note_path != second.note_path
+    assert first_manifest["cache_keys"]["audio"] != second_manifest["cache_keys"]["audio"]
 
 
 def test_cli_capture_emits_structured_done_event(tmp_path):

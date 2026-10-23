@@ -97,8 +97,18 @@ def test_windows_user_config_uses_local_app_data(monkeypatch):
         path = bootstrap.default_user_config_file()
 
     assert path == Path(
-        "C:/Users/example/AppData/Local/video-sum/config.env"
+        "C:/Users/example/AppData/Local/video-sum/video-sum/config.env"
     )
+
+
+def test_windows_bootstrap_paths_match_cli():
+    from core.config import default_model_dir, user_config_file
+    from platformdirs import user_cache_path
+
+    with patch.object(bootstrap.platform, "system", return_value="Windows"):
+        assert bootstrap.default_user_config_file() == user_config_file()
+        assert bootstrap.default_model_dir() == default_model_dir()
+        assert bootstrap.default_user_cache_dir() == user_cache_path("video-sum")
 
 
 def test_onboard_plan_is_side_effect_free(tmp_path):

@@ -66,7 +66,10 @@ class IngestionService:
         url = extract_shared_url(request.source)
         platform = self._platform_resolver(url)
         platform_name = platform.__class__.__name__.replace("Platform", "").lower()
-        video_id = platform.parse_url(url)
+        if platform_name == "bilibili" and hasattr(platform, "resolve_capture"):
+            url, video_id = platform.resolve_capture(url)
+        else:
+            video_id = platform.parse_url(url)
         media_cache_key = media_key(platform_name, video_id)
         audio_cache_key = derived_key(
             media_cache_key,

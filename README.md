@@ -21,6 +21,9 @@
 ASR 方式：本机 `whisper.cpp`、OpenAI 转写 API、兼容 HTTP 转写服务。
 Whisper 模型与 `whisper-cli` 不包含在发布产物中。
 
+Bilibili 多 P 视频需要在 URL 中用 `?p=N` 明确选择一 P；未选择时 CLI 会提示
+选择，避免把单 P 内容当作整部课程。每 P 使用独立资源 ID 与缓存。
+
 ## 安装
 
 面向用户的推荐入口是使用本仓库内嵌的
@@ -63,7 +66,7 @@ video-sum danmaku analyze danmaku.jsonl --output danmaku-analysis.json
 `resource compose` 写入最终笔记。每条资源只产生一份 Markdown，一级标题为：
 
 ```markdown
-# 总结稿
+# 总结
 # 辅助理解
 # Data
 ```

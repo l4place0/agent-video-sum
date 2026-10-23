@@ -90,6 +90,10 @@ def default_user_config_file() -> Path:
     if system == "windows":
         root = os.getenv("LOCALAPPDATA", "").strip()
         base = Path(root) if root else Path.home() / "AppData" / "Local"
+        legacy = base / "video-sum" / "config.env"
+        if legacy.is_file() and not (base / "video-sum" / "video-sum" / "config.env").is_file():
+            return legacy
+        return base / "video-sum" / "video-sum" / "config.env"
     elif system == "darwin":
         base = Path.home() / "Library" / "Application Support"
     else:
@@ -103,6 +107,7 @@ def default_user_data_dir() -> Path:
     if system == "windows":
         root = os.getenv("LOCALAPPDATA", "").strip()
         base = Path(root) if root else Path.home() / "AppData" / "Local"
+        return base / "video-sum" / "video-sum"
     elif system == "darwin":
         base = Path.home() / "Library" / "Application Support"
     else:
@@ -116,12 +121,23 @@ def default_user_cache_dir() -> Path:
     if system == "windows":
         root = os.getenv("LOCALAPPDATA", "").strip()
         base = Path(root) if root else Path.home() / "AppData" / "Local"
-        return base / "video-sum" / "Cache"
+        return base / "video-sum" / "video-sum" / "Cache"
     if system == "darwin":
         return Path.home() / "Library" / "Caches" / "video-sum"
     root = os.getenv("XDG_CACHE_HOME", "").strip()
     base = Path(root) if root else Path.home() / ".cache"
     return base / "video-sum"
+
+
+def default_model_dir() -> Path:
+    canonical = default_user_data_dir() / "models"
+    if platform.system().lower() == "windows":
+        legacy = canonical.parent.parent / "models"
+        def has_model(path: Path) -> bool:
+            return any((path / name).is_file() for name in ASR_MODEL_FILENAMES.values())
+        if has_model(legacy) and not has_model(canonical):
+            return legacy
+    return canonical
 
 
 def executable_name(target: str | None = None) -> str:
@@ -672,7 +688,7 @@ def effective_onboard_config(
         "ASR_PROVIDER": "whisper-cpp",
         "ASR_PROFILE": "balanced",
         "ASR_ENDPOINT": "",
-        "VIDEO_SUM_MODEL_DIR": str(default_user_data_dir() / "models"),
+        "VIDEO_SUM_MODEL_DIR": str(default_model_dir()),
         "WHISPER_CPP_EXECUTABLE": "whisper-cli",
         "VIDEO_SUM_DEFAULT_LANGUAGE": "zh",
         "VIDEO_SUM_DEFAULT_FRAMES": "10",
@@ -788,9 +804,9 @@ def onboard_values(args: argparse.Namespace) -> dict[str, str]:
         selected(
             "VIDEO_SUM_MODEL_DIR",
             args.model_dir,
-            str(data_dir / "models"),
+            str(default_model_dir()),
         ),
-        data_dir / "models",
+        default_model_dir(),
         "VIDEO_SUM_MODEL_DIR",
     )
     values = {

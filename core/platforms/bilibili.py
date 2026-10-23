@@ -1,5 +1,6 @@
 import re
 import logging
+from urllib.parse import parse_qs, urlsplit
 from pathlib import Path
 
 import httpx
@@ -31,6 +32,40 @@ class BilibiliPlatform(YtdlpPlatform):
             raise ValueError(f"Invalid Bilibili URL: {url}")
         return m.group(1)
 
+    @staticmethod
+    def _page_number(url: str) -> int | None:
+        values = parse_qs(urlsplit(url).query, keep_blank_values=True).get("p")
+        if values is None:
+            return None
+        if len(values) != 1 or not values[0].isdigit() or int(values[0]) < 1:
+            raise ValueError("Bilibili p must be a positive integer")
+        return int(values[0])
+
+    def resolve_capture(self, url: str) -> tuple[str, str]:
+        """Resolve scope before cache lookup so parts never share artifacts."""
+        bvid = self.parse_url(url)
+        requested = self._page_number(url)
+        try:
+            with httpx.Client(headers=self._API_HEADERS, follow_redirects=True,
+                              timeout=httpx.Timeout(60.0)) as client:
+                view = self._api_json(client, "https://api.bilibili.com/x/web-interface/view", {"bvid": bvid})
+        except (httpx.HTTPError, RuntimeError) as exc:
+            if requested is None:
+                raise RuntimeError(
+                    "Cannot verify Bilibili part count; select one with ?p=N"
+                ) from exc
+            return f"https://www.bilibili.com/video/{bvid}/?p={requested}", f"{bvid}-p{requested}"
+        pages = view.get("pages") or []
+        if not (view.get("cid") or pages):
+            raise RuntimeError("Bilibili metadata did not include part information")
+        if len(pages) > 1 and requested is None:
+            raise ValueError(f"Bilibili video has {len(pages)} parts; select one with ?p=N")
+        page = requested or 1
+        if page > max(len(pages), 1):
+            raise ValueError(f"Bilibili page {page} is outside 1..{max(len(pages), 1)}")
+        identity = f"{bvid}-p{page}" if len(pages) > 1 else bvid
+        return f"https://www.bilibili.com/video/{bvid}/?p={page}", identity
+
     def _get_ydl_opts(self, output_path: Path) -> dict:
         opts = super()._get_ydl_opts(output_path)
         from core.config import settings
@@ -47,11 +82,16 @@ class BilibiliPlatform(YtdlpPlatform):
         """
         try:
             return self._download_public_api(url, output_dir, keep_video)
+        except ValueError:
+            raise
         except Exception as exc:
             logger.warning(
                 "Bilibili public API download failed (%s); falling back to yt-dlp",
                 exc,
             )
+            bvid = self.parse_url(url)
+            for partial in (output_dir / f"{bvid}.wav", output_dir / f"{bvid}_video.m4s"):
+                partial.unlink(missing_ok=True)
             return super().download(url, output_dir, keep_video)
 
     def _download_public_api(
@@ -70,7 +110,14 @@ class BilibiliPlatform(YtdlpPlatform):
                 "https://api.bilibili.com/x/web-interface/view",
                 {"bvid": video_id},
             )
-            cid = view.get("cid")
+            pages = view.get("pages") or []
+            page_number = self._page_number(url) or 1
+            if page_number > max(len(pages), 1):
+                raise ValueError(f"Bilibili page {page_number} is outside 1..{max(len(pages), 1)}")
+            if len(pages) > 1 and self._page_number(url) is None:
+                raise ValueError(f"Bilibili video has {len(pages)} parts; select one with ?p=N")
+            page = pages[page_number - 1] if pages else view
+            cid = page.get("cid") or view.get("cid")
             if not cid:
                 raise RuntimeError("Bilibili metadata did not include a cid")
 
@@ -140,8 +187,12 @@ class BilibiliPlatform(YtdlpPlatform):
         owner = view.get("owner") or {}
         stat = view.get("stat") or {}
         metadata = {
-            "title": view.get("title", ""),
-            "duration": view.get("duration", 0),
+            "title": (f"{view.get('title', '')} - P{page_number} {page.get('part', '')}"
+                      if len(pages) > 1 else view.get("title", "")),
+            "duration": page.get("duration") or view.get("duration", 0),
+            "part": page_number,
+            "part_count": max(len(pages), 1),
+            "cid": cid,
             "thumbnail": view.get("pic", ""),
             "uploader": owner.get("name", ""),
             "video_id": video_id,

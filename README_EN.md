@@ -24,6 +24,10 @@ layered user-level caching, local whisper.cpp, OpenAI transcription, and a
 compatible HTTP transcription service. Whisper models and `whisper-cli` are
 not included in release bundles.
 
+For a multi-part Bilibili video, select a part with `?p=N`. An unspecified part
+produces a selection error so a single part cannot be mistaken for the full
+video. Each selected part has its own resource ID and cache entries.
+
 ## Installation
 
 For end users, use the Skill embedded in this repository at
@@ -66,7 +70,7 @@ video-sum danmaku analyze danmaku.jsonl --output danmaku-analysis.json
 `resource compose` atomically saves one Markdown note with these H1 sections:
 
 ```markdown
-# 总结稿
+# 总结
 # 辅助理解
 # Data
 ```
