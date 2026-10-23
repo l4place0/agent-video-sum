@@ -1,12 +1,12 @@
-# Bili Tutor CLI
+# Agent Video Sum
 
 [中文](README.md) | English
 
 A deterministic CLI for local video-learning workflows. It owns downloading,
 transcription, candidate-frame extraction, caching, and atomic note writes.
 Intent interpretation, terminology enhancement, visual selection, summaries,
-and Mermaid diagrams belong to the host AI through the separate
-[bili-tutor-skill](https://github.com/l4place0/bili-tutor-skill).
+and Mermaid diagrams belong to the host AI through the Skill embedded in this
+repository at [skills/agent-video-sum](skills/agent-video-sum/SKILL.md).
 
 ## Core workflow
 
@@ -26,13 +26,13 @@ not included in release bundles.
 
 ## Installation
 
-For end users, install
-[bili-tutor-skill](https://github.com/l4place0/bili-tutor-skill). Its thin
+For end users, use the Skill embedded in this repository at
+[skills/agent-video-sum](skills/agent-video-sum/SKILL.md). Its thin
 bootstrap downloads a platform-specific standalone bundle from this
 repository's GitHub Releases:
 
 ```text
-bili-tutor-cli-<version>-<platform>-<arch>.zip
+agent-video-sum-<version>-<platform>-<arch>.zip
 ├── video-sum[.exe]
 └── manifest.json
 ```
@@ -40,8 +40,8 @@ bili-tutor-cli-<version>-<platform>-<arch>.zip
 For source development:
 
 ```bash
-git clone https://github.com/l4place0/bili-tutor-cli.git
-cd bili-tutor-cli
+git clone https://github.com/l4place0/agent-video-sum.git
+cd agent-video-sum
 uv sync --extra dev
 uv run video-sum --help
 ```
@@ -111,12 +111,13 @@ uv run ruff check .
 uv run pytest
 uv sync --extra standalone
 uv run python scripts/build_standalone.py \
-  --target darwin-arm64 --version 0.3.1
+  --target darwin-arm64 --version 0.4.0
 ```
 
 Tags matching `v*` trigger GitHub Actions to build five platform bundles plus
-SHA-256 sidecars. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the
-boundary model.
+SHA-256 sidecars. The Skill lives in `skills/agent-video-sum/` and its tests run
+through `uv run pytest skills/agent-video-sum/tests`. See
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the boundary model.
 
 ## License
 

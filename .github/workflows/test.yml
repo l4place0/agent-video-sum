@@ -61,3 +61,23 @@ jobs:
 
       - name: Run compose regression tests on Windows
         run: uv run pytest tests/test_ingestion.py --tb=short -q
+
+  skill:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install Python dependencies
+        run: uv sync --extra dev
+
+      - name: Run embedded Skill tests
+        run: uv run pytest skills/agent-video-sum/tests --tb=short -q
+
+      - name: Report Skill bootstrap status
+        run: uv run python skills/agent-video-sum/scripts/bootstrap.py status

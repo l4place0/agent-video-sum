@@ -1,6 +1,6 @@
 [project]
-name = "bili-tutor-cli"
-version = "0.3.1"
+name = "agent-video-sum"
+version = "0.4.0"
 description = "CLI primitives for capturing video transcripts and key frames into a local learning library"
 requires-python = ">=3.10"
 dependencies = [
@@ -37,7 +37,7 @@ build-backend = "setuptools.build_meta"
 include = ["core*", "cli*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "skills/agent-video-sum/tests"]
 asyncio_mode = "auto"
 markers = ["unit: Unit tests", "integration: Integration tests"]
 

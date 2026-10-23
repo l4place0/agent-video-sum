@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Video Sum"
+  short_description: "Build verified notes and interactive learning pages"
+  default_prompt: "Use $agent-video-sum to capture this video, analyze its transcript, frames, comments, and danmaku when available, save a verified learning note with an interactive single-page HTML experience, and add a one-image summary when the host supports image generation."

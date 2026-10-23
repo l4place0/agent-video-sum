@@ -1,10 +1,10 @@
 # Architecture
 
-This repository contains the local-first CLI only. It exposes deterministic
-operation primitives. The separately versioned
-[`bili-tutor-skill`](https://github.com/l4place0/bili-tutor-skill) lets a host
-AI interpret intent, enhance transcripts, select frames, create Mermaid
-diagrams, and assemble the final note.
+This repository ships both the local-first CLI and its host-AI Skill. The CLI
+exposes deterministic operation primitives; the Skill embedded at
+[`skills/agent-video-sum`](../skills/agent-video-sum/SKILL.md) lets a host AI
+interpret intent, enhance transcripts, select frames, create Mermaid diagrams,
+and assemble the final note. Both layers are versioned together.
 
 ## Core path
 
@@ -21,7 +21,7 @@ video-sum capture
    +-- optional top-level comments / current danmaku
    |
    v
-Host AI + external bili-tutor-skill
+Host AI + embedded skills/agent-video-sum
    |
    +-- transcript terminology enhancement
    +-- summary and Mermaid composition
@@ -46,7 +46,7 @@ v* tag
   -> PyInstaller standalone CLI per OS/architecture
   -> zip + manifest + SHA-256 sidecar
   -> GitHub Release
-  -> bili-tutor-skill bootstrap download and atomic user-level install
+  -> skills/agent-video-sum bootstrap download and atomic user-level install
 ```
 
 The standalone bundle includes Python, Python dependencies, yt-dlp, the OpenAI
@@ -67,6 +67,7 @@ Whisper models and `whisper-cli` remain optional external local-ASR assets.
 | Community | `core/community.py` | Bilibili comments, current danmaku, and deterministic analysis candidates |
 | Runtime | `core/runtime.py` | Bundled/system FFmpeg resolution |
 | Release | `scripts/build_standalone.py`, `.github/workflows/release.yml` | Cross-platform bundle production |
+| Skill | `skills/agent-video-sum/` | Host-AI instructions, lifecycle wrappers, and bootstrap/issue scripts |
 
 ## Storage boundaries
 

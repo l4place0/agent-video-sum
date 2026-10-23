@@ -1,7 +1,7 @@
 ---
 protocol: engineering-loop
 version: 1
-repository: l4place0/bili-tutor-cli
+repository: l4place0/agent-video-sum
 state_file: docs/automation/state.json
 controller: docs/automation/loopctl.py
 ---
@@ -155,7 +155,7 @@ python3 docs/automation/loopctl.py validate
 
 python3 docs/automation/loopctl.py run start \
   --operation issue \
-  --repository l4place0/bili-tutor-cli \
+  --repository l4place0/agent-video-sum \
   --issue 3 \
   --base-sha 7352e81 \
   --allow code_changes \

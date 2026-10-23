@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "repository": "l4place0/agent-video-sum",
+  "version": "0.4.0",
+  "asset_template": "agent-video-sum-{version}-{target}.zip",
+  "executable": "video-sum"
+}

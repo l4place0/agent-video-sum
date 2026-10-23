@@ -1,10 +1,10 @@
-# Bili Tutor CLI
+# Agent Video Sum
 
 [English](README_EN.md) | 中文
 
 面向本地视频学习工作流的确定性 CLI。它负责下载、转写、候选关键帧、缓存和
-笔记原子写入；用户意图理解、术语增强、视觉筛选、总结与 Mermaid 图由独立的
-[bili-tutor-skill](https://github.com/l4place0/bili-tutor-skill) 交给宿主 AI 完成。
+笔记原子写入；用户意图理解、术语增强、视觉筛选、总结与 Mermaid 图由本仓库
+内嵌的 [skill](skills/agent-video-sum/SKILL.md) 交给宿主 AI 完成。
 
 ## 核心链路
 
@@ -23,13 +23,13 @@ Whisper 模型与 `whisper-cli` 不包含在发布产物中。
 
 ## 安装
 
-面向用户的推荐入口是安装
-[bili-tutor-skill](https://github.com/l4place0/bili-tutor-skill)，由其薄安装脚本
+面向用户的推荐入口是使用本仓库内嵌的
+[skills/agent-video-sum](skills/agent-video-sum/SKILL.md)，由其薄安装脚本
 下载本仓库 GitHub Release 中对应平台的独立产物。产物包含 CLI、Python
 运行时、Python 依赖、yt-dlp、OpenAI ASR 客户端和 FFmpeg：
 
 ```text
-bili-tutor-cli-<version>-<platform>-<arch>.zip
+agent-video-sum-<version>-<platform>-<arch>.zip
 ├── video-sum[.exe]
 └── manifest.json
 ```
@@ -37,8 +37,8 @@ bili-tutor-cli-<version>-<platform>-<arch>.zip
 源码开发安装：
 
 ```bash
-git clone https://github.com/l4place0/bili-tutor-cli.git
-cd bili-tutor-cli
+git clone https://github.com/l4place0/agent-video-sum.git
+cd agent-video-sum
 uv sync --extra dev
 uv run video-sum --help
 ```
@@ -105,11 +105,13 @@ uv run ruff check .
 uv run pytest
 uv sync --extra standalone
 uv run python scripts/build_standalone.py \
-  --target darwin-arm64 --version 0.3.1
+  --target darwin-arm64 --version 0.4.0
 ```
 
 推送匹配 `v*` 的 tag 会触发 GitHub Actions，构建五个平台的 ZIP 与
-SHA-256 sidecar。架构边界见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+SHA-256 sidecar。Skill 位于 `skills/agent-video-sum/`，其测试由
+`uv run pytest skills/agent-video-sum/tests` 覆盖。架构边界见
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
 ## License
 
