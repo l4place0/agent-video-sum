@@ -54,9 +54,9 @@ python3 scripts/bootstrap.py install \
 `VIDEO_SUM_BIN_DIR` and `VIDEO_SUM_EXECUTABLE` provide managed overrides for
 the install location and executable. The repository and version defaults come
 from `runtime.lock.json`; `AGENT_VIDEO_SUM_REPOSITORY` and
-`AGENT_VIDEO_SUM_VERSION` override them. The legacy `BILI_TUTOR_CLI_REPOSITORY`,
-`BILI_TUTOR_CLI_VERSION`, `VIDEO_SUM_RELEASE_REPOSITORY`, and
-`VIDEO_SUM_RELEASE_VERSION` names remain supported as compatibility fallbacks.
+`AGENT_VIDEO_SUM_VERSION` override them. The earlier
+`VIDEO_SUM_RELEASE_REPOSITORY` and `VIDEO_SUM_RELEASE_VERSION` names remain
+supported as compatibility fallbacks.
 `GITHUB_TOKEN` may be present for private release downloads; never print it.
 
 ## Optional local transcription

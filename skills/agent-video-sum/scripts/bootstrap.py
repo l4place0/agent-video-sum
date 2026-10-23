@@ -1226,11 +1226,8 @@ def main() -> int:
             default=os.getenv(
                 "AGENT_VIDEO_SUM_REPOSITORY",
                 os.getenv(
-                    "BILI_TUTOR_CLI_REPOSITORY",
-                    os.getenv(
-                        "VIDEO_SUM_RELEASE_REPOSITORY",
-                        DEFAULT_REPOSITORY,
-                    ),
+                    "VIDEO_SUM_RELEASE_REPOSITORY",
+                    DEFAULT_REPOSITORY,
                 ),
             ),
         )
@@ -1239,11 +1236,8 @@ def main() -> int:
             default=os.getenv(
                 "AGENT_VIDEO_SUM_VERSION",
                 os.getenv(
-                    "BILI_TUTOR_CLI_VERSION",
-                    os.getenv(
-                        "VIDEO_SUM_RELEASE_VERSION",
-                        DEFAULT_VERSION,
-                    ),
+                    "VIDEO_SUM_RELEASE_VERSION",
+                    DEFAULT_VERSION,
                 ),
             ),
         )
