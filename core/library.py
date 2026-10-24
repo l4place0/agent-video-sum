@@ -316,16 +316,41 @@ class FilesystemLibrary:
     ) -> ResourceRecord:
         self.root.mkdir(parents=True, exist_ok=True)
         resource_id = f"{platform}-{video_id}"
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", resource_id):
+            raise ValueError("Invalid resource_id")
         title = metadata.get("title") or video_id
         note_name = f"{safe_filename(title, video_id)}.md"
         note_path = self.root / note_name
         asset_root = self.root / "assets"
         manifest_path = asset_root / f"{resource_id}.json"
-
-        if (note_path.exists() or manifest_path.exists()) and not force:
+        try:
+            existing = self.get_resource(resource_id)
+        except FileNotFoundError:
+            existing = None
+        if existing and not force:
             raise FileExistsError(
                 f"Resource already exists: {note_path}. Use --force to replace it."
             )
+        # Keep legacy note paths (including after a title change). Force only
+        # grants permission to replace this resource's own note.
+        if existing:
+            note_path = Path(existing["note_path"])
+            manifest_path = Path(existing["manifest_path"])
+            if note_path.parent != self.root:
+                raise ValueError("Resource note must be directly inside the library")
+        other_notes = {
+            Path(item["note_path"]).resolve()
+            for item in self.list_resources()
+            if item["resource_id"] != resource_id and item["note_path"]
+        }
+        if existing and note_path.resolve() in other_notes:
+            raise FileExistsError(f"Resource note is shared with another resource: {note_path}")
+        if not existing and (note_path.exists() or note_path.resolve() in other_notes):
+            title_part = safe_filename(title, video_id, max_length=max(1, 118 - len(resource_id)))
+            note_path = self.root / f"{title_part}--{resource_id}.md"
+            if note_path.exists() or note_path.resolve() in other_notes:
+                raise FileExistsError(f"Resource note path is already occupied: {note_path}")
+        note_name = note_path.name
 
         staging_parent = self.root / ".video-sum-staging"
         staging_parent.mkdir(parents=True, exist_ok=True)
@@ -356,7 +381,7 @@ class FilesystemLibrary:
                 relative_data_assets=[],
                 fact_check=None,
             )
-            staged_note = stage_dir / note_name
+            staged_note = stage_dir / "note.md"
             staged_note.write_text(note_text, encoding="utf-8")
 
             manifest = {

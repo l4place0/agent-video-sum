@@ -28,6 +28,10 @@ For a multi-part Bilibili video, select a part with `?p=N`. An unspecified part
 produces a selection error so a single part cannot be mistaken for the full
 video. Each selected part has its own resource ID and cache entries.
 
+When titles collide after filename sanitization, the new note name includes its
+resource ID. `--force` replaces the same resource using its existing note path;
+it cannot overwrite another resource's note or an unrelated file.
+
 ## Installation
 
 For end users, use the Skill embedded in this repository at
