@@ -101,14 +101,30 @@ def test_windows_user_config_uses_local_app_data(monkeypatch):
     )
 
 
-def test_windows_bootstrap_paths_match_cli():
-    from core.config import default_model_dir, user_config_file
-    from platformdirs import user_cache_path
+def test_windows_bootstrap_paths_match_cli(monkeypatch, tmp_path):
+    # bootstrap decides the platform via platform.system(), while core.config goes
+    # through platformdirs, which inspects the *real* host. Patching only
+    # bootstrap.platform.system made this assertion host-dependent: on Linux CI
+    # bootstrap emitted Windows paths while platformdirs emitted POSIX ones, so
+    # the two could never match. It only ever passed on a real Windows box.
+    #
+    # The contract that actually matters: both sides, given the same Windows
+    # inputs, must resolve to the same location. So pin the Windows base for
+    # bootstrap via LOCALAPPDATA and pin core.config's platformdirs lookups to
+    # that same directory. This is then verifiable on any host.
+    from core import config as cli_config
+
+    local_appdata = tmp_path / "AppData" / "Local"
+    windows_root = local_appdata / "video-sum" / "video-sum"
+
+    monkeypatch.setenv("LOCALAPPDATA", str(local_appdata))
+    monkeypatch.setattr(cli_config, "user_config_path", lambda *a, **k: windows_root)
+    monkeypatch.setattr(cli_config, "user_data_path", lambda *a, **k: windows_root)
 
     with patch.object(bootstrap.platform, "system", return_value="Windows"):
-        assert bootstrap.default_user_config_file() == user_config_file()
-        assert bootstrap.default_model_dir() == default_model_dir()
-        assert bootstrap.default_user_cache_dir() == user_cache_path("video-sum")
+        assert bootstrap.default_user_config_file() == cli_config.user_config_file()
+        assert bootstrap.default_model_dir() == cli_config.default_model_dir()
+        assert bootstrap.default_user_cache_dir() == windows_root / "Cache"
 
 
 def test_onboard_plan_is_side_effect_free(tmp_path):
