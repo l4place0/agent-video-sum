@@ -46,6 +46,23 @@ class IngestionRequest:
     force: bool = False
 
 
+def _asr_cache_identity(request: IngestionRequest) -> dict:
+    provider = request.asr_provider or settings.asr_provider
+    if provider in ("whisper-cpp", "whisper_cpp"):
+        path = (request.asr_model_path or settings.whisper_cpp_model).expanduser().resolve()
+        identity = {"provider": "whisper-cpp", "model_path": str(path)}
+        try:
+            stat = path.stat()
+            identity.update(size=stat.st_size, modified_ns=stat.st_mtime_ns)
+        except FileNotFoundError:
+            # Let the provider report a missing model if transcription is needed.
+            pass
+        return identity
+    if provider == "local":
+        return {"provider": provider, "endpoint": settings.asr_endpoint}
+    return {"provider": provider, "model": settings.asr_model}
+
+
 class IngestionService:
     def __init__(
         self,
@@ -88,15 +105,10 @@ class IngestionService:
         transcript_cache_key = derived_key(
             audio_cache_key,
             "transcript",
-            provider=request.asr_provider or settings.asr_provider,
+            asr=_asr_cache_identity(request),
             profile=request.asr_profile,
-            model=(
-                request.asr_model_path.name
-                if request.asr_model_path is not None
-                else settings.asr_model
-            ),
             language=request.language,
-            implementation=1,
+            implementation=2,
         )
         frames_cache_key = derived_key(
             video_cache_key,

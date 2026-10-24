@@ -38,6 +38,10 @@ class OpenAIWhisperAPI(BaseASR):
         segments = []
         if hasattr(resp, "segments") and resp.segments:
             for seg in resp.segments:
+                # The SDK returns typed TranscriptionSegment objects. Compatible
+                # endpoints and older clients may still provide dictionaries.
+                if not isinstance(seg, dict):
+                    seg = seg.model_dump()
                 segments.append({
                     "start": seg.get("start", 0),
                     "end": seg.get("end", 0),

@@ -135,6 +135,13 @@ class CacheStore:
                 return None
             path = self.root / row["relative_path"]
             if row["expiry"] < now or not path.exists():
+                # Keep the index until removal succeeds so prune/clear can retry
+                # a locked object rather than losing track of its disk usage.
+                try:
+                    if path.exists():
+                        shutil.rmtree(path)
+                except OSError:
+                    return None
                 connection.execute("DELETE FROM objects WHERE key = ?", (key,))
                 return None
             connection.execute(

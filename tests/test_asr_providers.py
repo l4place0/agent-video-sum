@@ -98,3 +98,26 @@ def test_get_asr_openai_requires_key():
     from core.asr import get_asr
     with pytest.raises(ValueError, match="ASR_API_KEY"):
         get_asr("openai")
+
+
+@pytest.mark.parametrize("as_dictionary", [False, True])
+@patch("core.asr.cloud.OpenAI")
+def test_openai_whisper_preserves_real_sdk_segments(mock_openai_cls, tmp_path, as_dictionary):
+    from openai.types.audio import TranscriptionSegment, TranscriptionVerbose
+    from core.asr.cloud import OpenAIWhisperAPI
+
+    segment = TranscriptionSegment(
+        id=0, seek=0, start=0.25, end=1.5, text=" Hello ", tokens=[1],
+        temperature=0, avg_logprob=0, compression_ratio=1, no_speech_prob=0,
+    )
+    response = TranscriptionVerbose(text="Hello", language="en", duration=1.5, segments=[segment])
+    if as_dictionary:
+        response = MagicMock(text="Hello", segments=[segment.model_dump()])
+    mock_openai_cls.return_value.audio.transcriptions.create.return_value = response
+    audio = tmp_path / "audio.wav"
+    audio.write_bytes(b"audio")
+
+    text, segments = OpenAIWhisperAPI(api_key="dummy").transcribe_segments(audio, "en")
+
+    assert text == "Hello"
+    assert segments == [{"start": 0.25, "end": 1.5, "text": "Hello"}]

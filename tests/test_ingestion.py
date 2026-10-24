@@ -68,6 +68,50 @@ def test_extract_shared_url_decodes_html_entities():
     assert url.endswith("share_source=copy_web&vd_source=test")
 
 
+def test_ingestion_retranscribes_when_configured_local_model_changes(tmp_path):
+    calls = []
+
+    def asr_factory(*args, **kwargs):
+        calls.append(str(settings.whisper_cpp_model))
+        asr = MagicMock()
+        asr.transcribe_segments.return_value = (calls[-1], [])
+        return asr
+
+    service = IngestionService(
+        asr_factory=asr_factory, platform_resolver=lambda _: BilibiliPlatform(),
+        frame_extractor=_fake_frames,
+    )
+    with patch.object(settings, "cache_root", tmp_path / "cache"):
+        for model in ("tiny.bin", "large.bin"):
+            with patch.object(settings, "whisper_cpp_model", Path(model)):
+                record = service.ingest(IngestionRequest(
+                    source=SHARE_TEXT, output_dir=tmp_path / model,
+                    asr_provider="whisper-cpp", frame_count=0, cache_policy="reuse",
+                ))
+                assert model in record.note_path.read_text(encoding="utf-8")
+
+    assert calls == ["tiny.bin", "large.bin"]
+
+
+def test_model_cache_identity_distinguishes_paths_and_replaced_files(tmp_path):
+    from core.ingestion import _asr_cache_identity
+
+    first = tmp_path / "one" / "model.bin"
+    second = tmp_path / "two" / "model.bin"
+    for path in (first, second):
+        path.parent.mkdir()
+        path.write_bytes(b"first")
+    request = IngestionRequest(source=SHARE_TEXT, output_dir=tmp_path, asr_provider="whisper-cpp", asr_model_path=first)
+    before = _asr_cache_identity(request)
+    other = _asr_cache_identity(IngestionRequest(
+        source=SHARE_TEXT, output_dir=tmp_path, asr_provider="whisper-cpp", asr_model_path=second,
+    ))
+    first.write_bytes(b"replacement")
+
+    assert before != other
+    assert before != _asr_cache_identity(request)
+
+
 def test_ingestion_exports_required_note_sections(tmp_path):
     service = IngestionService(
         asr_factory=_fake_asr,
